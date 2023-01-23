@@ -1,7 +1,7 @@
 # 数据库配置
 [mysql]
 username = "root"
-password = "yourpwdhere"
+password = "1234qwer"
 net = "tcp"
 addr = "localhost"
 dbname = "douyin"
