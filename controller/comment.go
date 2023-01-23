@@ -2,8 +2,9 @@ package controller
 
 import (
 	"douyin/models"
+	"douyin/service"
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app"
 	"net/http"
 	"sort"
 	"strconv"
@@ -17,12 +18,6 @@ type CommentActionResponse struct {
 type CommentListResponse struct {
 	Response
 	comments []models.Comment
-}
-
-// SelectToken 根据Token获取用户信息，如果不存在，exist为false
-func SelectToken(token string) (user models.UserInfo, exist bool) {
-
-	return
 }
 
 // NewCommentID 获取新的ID（逐渐增加）
@@ -47,17 +42,17 @@ func GetComments(videoID int) []models.Comment {
 }
 
 // CommentAction no practical effect, just check if token is valid
-func CommentAction(c *gin.Context) {
+func CommentAction(c *app.RequestContext) {
 	token := c.Query("token")
 	actionType := c.Query("action_type")
 
-	if user, exist := SelectToken(token); exist {
+	if user, exist := service.SelectToken(token); exist {
 		if actionType == "1" {
 			text := c.Query("comment_text")
 			newComment := &models.Comment{
-				ID:       NewCommentID(),
-				UserInfo: user,
-				Content:  text,
+				ID:      NewCommentID(),
+				User:    user,
+				Content: text,
 			}
 			AddComment(newComment)
 			c.JSON(http.StatusOK, CommentActionResponse{Response{StatusCode: 0}, *newComment})
@@ -83,7 +78,7 @@ func CommentAction(c *gin.Context) {
 }
 
 // CommentList all videos have same demo comment list
-func CommentList(c *gin.Context) {
+func CommentList(c *app.RequestContext) {
 	videoID, err := strconv.Atoi(c.Query("video_id"))
 	if err != nil {
 		fmt.Println(err)
