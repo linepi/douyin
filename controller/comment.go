@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"context"
+	"douyin/config"
 	"douyin/models"
 	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
@@ -46,43 +48,48 @@ func GetComments(videoID int) []models.Comment {
 }
 
 // CommentAction no practical effect, just check if token is valid
-func CommentAction(c *app.RequestContext) {
-	// TODO 适配中间件
-	token := c.Query("token")
+func CommentAction(_ context.Context, c *app.RequestContext) {
 	actionType := c.Query("action_type")
+	userObj, _ := c.Get(config.IdentityKey)
+	if userObj == nil {
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "token获取失败"})
+		return
+	}
 
-	if user, exist := service.SelectToken(token); exist {
-		if actionType == "1" {
-			text := c.Query("comment_text")
-			newComment := &models.Comment{
-				User:    user,
-				Content: text,
-			}
-			AddComment(newComment)
-			c.JSON(http.StatusOK, CommentActionResponse{Response{StatusCode: 0}, *newComment})
+	if actionType == "1" {
+		text := c.Query("comment_text")
+		newComment := &models.Comment{
+			User:    userObj.(models.User),
+			Content: text,
+		}
+		AddComment(newComment)
+		c.JSON(http.StatusOK, CommentActionResponse{Response{StatusCode: 0}, *newComment})
+		return
+	}
+	if actionType == "2" {
+		videoID, err := strconv.Atoi(c.Query("video_id"))
+		if err != nil {
+			fmt.Println(err)
 			return
 		}
-		if actionType == "2" {
-			videoID, err := strconv.Atoi(c.Query("video_id"))
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			commentID, err := strconv.Atoi(c.Query("comment_id"))
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			DeleteComment(videoID, commentID)
+		commentID, err := strconv.Atoi(c.Query("comment_id"))
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
-		c.JSON(http.StatusOK, Response{StatusCode: 0})
-	} else {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		DeleteComment(videoID, commentID)
 	}
+	c.JSON(http.StatusOK, Response{StatusCode: 0})
 }
 
 // CommentList all videos have same demo comment list
-func CommentList(c *app.RequestContext) {
+func CommentList(_ context.Context, c *app.RequestContext) {
+	userObj, _ := c.Get(config.IdentityKey)
+	if userObj == nil {
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "token获取失败"})
+		return
+	}
+
 	videoID, err := strconv.Atoi(c.Query("video_id"))
 	if err != nil {
 		fmt.Println(err)
