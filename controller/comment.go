@@ -2,7 +2,6 @@ package controller
 
 import (
 	"douyin/models"
-	"douyin/service"
 	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
 	"net/http"
@@ -48,6 +47,7 @@ func GetComments(videoID int) []models.Comment {
 
 // CommentAction no practical effect, just check if token is valid
 func CommentAction(c *app.RequestContext) {
+	// TODO 适配中间件
 	token := c.Query("token")
 	actionType := c.Query("action_type")
 
